@@ -70,9 +70,9 @@ if __name__ == '__main__':
     #######################################
     #set up
     parser = argparse.ArgumentParser()
-    parser.add_argument("--test_image", type=str, default="./cGAN_data/test_org/", help="path to load testing image")
-    parser.add_argument("--test_mask", type=str, default="./cGAN_data/test_gt/", help="path to load testing masks")
-    parser.add_argument('--weights', type=str, default="./pretrained/iaanet.pt", help="path of the weights")
+    parser.add_argument("--test_image", type=str, default="./cGAN_data/test/SIRST/image/", help="path to load testing image")
+    parser.add_argument("--test_mask", type=str, default="./cGAN_data/test/SIRST/mask", help="path to load testing masks")
+    parser.add_argument('--weights', type=str, default="./outputs/demo1/best.pt", help="path of the weights")
     parser.add_argument("--iou_thres", type=float, default=0.6, help="iou threshold for detection stage")
     parser.add_argument("--conf_thres", type=float, default=0.2, help="confidence threshold for detection stage")
     parser.add_argument("--topk", type=int, default=5, help="if predict no boxes, select out k region boxes with top confidence")

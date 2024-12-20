@@ -6,6 +6,11 @@ import yaml
 import argparse
 import torch.backends.cudnn as cudnn
 from PIL import Image
+import warnings
+
+# 忽略所有warning
+warnings.filterwarnings("ignore")
+
 
 matplotlib.use('Agg')
 import numpy as np
@@ -22,12 +27,12 @@ from test import test
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--image_path", type=str, default='./cGAN_data/training/', help="path to load training image")
-    parser.add_argument("--mask_path", type=str, default='./cGAN_data/training/', help="path to load training masks")
-    parser.add_argument("--val_image", type=str, default="./cGAN_data/val_org/", help="path to load validation image")
-    parser.add_argument("--val_mask", type=str, default="./cGAN_data/val_gt/", help="path to load validation masks")
-    parser.add_argument("--bboxfile", type=str, default="./cGAN_data/trainning_box_gt.csv", help="path to bounding boxes ground truth")
-    parser.add_argument("--save_path", type=str, default='./outputs/demo', help="path to save model")
+    parser.add_argument("--image_path", type=str, default='./cGAN_data/training/image', help="path to load training image")
+    parser.add_argument("--mask_path", type=str, default='./cGAN_data/training/mask', help="path to load training masks")
+    parser.add_argument("--val_image", type=str, default="./cGAN_data/test/MDvsFA/image", help="path to load validation image")
+    parser.add_argument("--val_mask", type=str, default="./cGAN_data/test/MDvsFA/mask", help="path to load validation masks")
+    parser.add_argument("--bboxfile", type=str, default="./cGAN_data/training_box_gt1.csv", help="path to bounding boxes ground truth")
+    parser.add_argument("--save_path", type=str, default='./outputs/demo1', help="path to save model")
     parser.add_argument("--pos_mode", type=str, default='cosin', help="position embedding type, ['cosin'] & [''learned] are available")
     parser.add_argument("--iou_thres", type=float, default=0.6, help="iou threshold for detection stage")
     parser.add_argument("--conf_thres", type=float, default=0.2, help="confidence threshold for detection stage")
@@ -40,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument("--hidden_dim", type=int, default=512, help="hidden_dim of transformer")
     parser.add_argument("--d_lr", type=float, default=0.01, help="Learning Rate for detection")
     parser.add_argument("--s_lr", type=float, default=0.001, help="Learning Rate for segmentation")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch Size")
+    parser.add_argument("--batch_size", type=int, default=1, help="Batch Size")
     parser.add_argument("--epochs", type=int, default=10, help="Epochs")
     parser.add_argument('--rpn_pretrained', type=str, default=None, help='load pretrained rpn weights')
     parser.add_argument("--expand", type=int, default=8, help="The additonal length of expanded local region for semantic generator")
@@ -121,11 +126,11 @@ if __name__ == '__main__':
         pbar = enumerate(train_dataloader)
         pbar = tqdm(pbar, total=nb)
         
-        mloss = np.zeros(5, dtype=np.float)
+        mloss = np.zeros(5, dtype=float)
         for i, (input, seg_targets, bbox_targets) in pbar:
 
             detect_output, reg_output, mask_maps, target_boxes = Model(input.to(device), max_det_num=args.max_det_num, conf_thres=args.conf_thres, iou_thres=args.iou_thres, expand=args.expand, topk=args.topk)
-            loss, loss_items = criterion(Dp=detect_output, Dtarget=bbox_targets.to(device), 
+            loss, loss_items = criterion(Dp=detect_output, Dtarget=bbox_targets.to(device),
                                             anchor=backbone.anchor, stride=backbone.stride,
                                             Sp=reg_output, Starget=seg_targets.to(device), mask_maps=mask_maps,
                                             target_boxes=target_boxes)
@@ -133,7 +138,7 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        
+
             mloss = (mloss * i + loss_items.cpu().numpy()) / (i + 1)
 
         Loss_box.append(mloss[0])
@@ -184,5 +189,7 @@ if __name__ == '__main__':
     plt.plot(x, Loss_s, 'o-')
     plt.xlabel('Epoch')
     plt.ylabel('Segment Loss')
+
+    plt.tight_layout()
 
     plt.savefig(os.path.join(args.save_path, 'result.jpg'))
